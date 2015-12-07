@@ -1,0 +1,35 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:weightSum="4"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:layout_weight="1"
+        android:id="@+id/line_menu"
+        android:text="LINIA:"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_weight="1"
+        android:id="@+id/line"
+        android:text="997"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_weight="1"
+        android:id="@+id/minutes_menu"
+        android:text="CZAS ODJAZDU:"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:layout_weight="1"
+        android:id="@+id/minutes"
+        android:text="666"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content" />
+</LinearLayout>

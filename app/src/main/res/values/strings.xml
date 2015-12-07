@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">DoCelu</string>
+    <string name="action_settings">Ustawienia</string>
+    <string name="no_internet_connection">Brak połączenia z internetem!</string>
+    <string name="downloading_schedule">Pobieranie danych...</string>
+    <string name="downloading_success">Pobieranie zakończony powodzeniem!</string>
+</resources>
