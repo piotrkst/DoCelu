@@ -242,7 +242,6 @@ public class MainActivity extends AppCompatActivity {
             }
             rd.close();
 
-            // fetch responseCode
             responseCode = conn.getResponseCode();
             Log.i("ResponseFromServer", "code: " + responseCode);
             Log.i("ResponseFromServer", "response: " + response);
