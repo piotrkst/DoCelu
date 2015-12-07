@@ -19,8 +19,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,7 +26,6 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -104,26 +101,6 @@ public class MainActivity extends AppCompatActivity {
         departuresView.setAdapter(adapter);
     }
 
-    private ArrayList<Departure> getDeparturesFromJson(JSONArray jArray) throws JSONException {
-        ArrayList<Departure> departureList = new ArrayList<>();
-        departureList.clear();
-
-        for (int i = 0; i < jArray.length(); i++) {
-            JSONObject jsonData = jArray.getJSONObject(i);
-            Departure departure = getDepartures(jsonData);
-            departureList.add(departure);
-        }
-        return departureList;
-    }
-
-    private Departure getDepartures(JSONObject jObject) {
-        return new Departure(jObject.optBoolean("realTime"),
-                jObject.optString("line"),
-                jObject.optInt("minutes"),
-                jObject.optString("departure"),
-                jObject.optBoolean("onStopPoint"));
-    }
-
     public class ScheduleAdapter extends ArrayAdapter<Departure> {
 
         public ScheduleAdapter(Context context, ArrayList<Departure> items) {
@@ -165,101 +142,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public String sendToServer() throws IOException {
-        String timeStamp = getTimeStamp();
-        HttpURLConnection conn = null;
-        Integer responseCode = 0;
-        String urlParameters = "method=" + URLEncoder.encode("getTimes","UTF-8") + "&p0=" + URLEncoder.encode("{\"symbol\":\"WICH02\"}", "UTF-8");
-
-        Log.i("URLEncoder", "URLEncoder: " + URLEncoder.encode("{\"symbol\":\"WICH02\"}", "UTF-8"));
-        try {
-            // create HttpURLConnection
-            URL url = new URL(TEST_URL + timeStamp);
-            conn = (HttpURLConnection) url.openConnection(); //<3333333333 kochamKocurka()
-
-            Log.i("ExceptionError", "We are still here 1/10");
-
-
-            // make POST request to the given URL
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Length", "" +
-                    Integer.toString(urlParameters.getBytes().length));
-            conn.setRequestProperty("Cookie", "JSESSIONID=+FWYRC2+Tz9JLGAjqfxDjPnt.undefined; JSESSIONID=7093FDAEF67212D456793FCC8BD723FF.app1; __utmt=1; __utma=200167215.1491166330.1448740346.1448740346.1448740346.1; __utmb=200167215.1.10.1448740346; __utmc=200167215; __utmz=200167215.1448740346.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); cb-enabled=enabled");
-            conn.setRequestProperty("Origin", "https://www.peka.poznan.pl");
-            conn.setRequestProperty("Accept-Encoding", "gzip, deflate");
-            conn.setRequestProperty("Accept-Language", "en-GB,en;q=0.8,en-US;q=0.6,pl;q=0.4");
-            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.73 Safari/537.36");
-            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            conn.setRequestProperty("Accept", "text/javascript, text/html, application/xml, text/xml, */*");
-            conn.setRequestProperty("X-Prototype-Version", "1.7");
-            conn.setRequestProperty("X-Requested-With", "XMLHttpRequest");
-            conn.setRequestProperty("Connection", "keep-alive");
-            conn.setRequestProperty("Referer", "https://www.peka.poznan.pl/vm/");
-
-            conn.setDoOutput(true);
-            conn.setDoInput(true);
-
-
-            Log.i("ExceptionError", "We are still here 2/10");
-            //Send request
-            DataOutputStream wr = new DataOutputStream (
-                    conn.getOutputStream ());
-            Log.i("ExceptionError", "We are still here 2.5/10");
-            wr.writeBytes(urlParameters);
-            Log.i("ExceptionError", "We are still here 3/10");
-            wr.flush();
-            Log.i("ExceptionError", "We are still here 4/10");
-            wr.close();
-            Log.i("ExceptionError", "We are still here 5/10");
-
-            int status = conn.getResponseCode();
-            Log.i("TEST", "TEST BEFORE CRASH, CODE: " + status);
-            InputStream error = conn.getErrorStream();
-            Log.i("TEST", "ERROR STREAM?: " + error);
-
-            InputStream is = new BufferedInputStream(conn.getInputStream());
-
-
-            Log.i("ExceptionError", "We are still here 6/10");
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-            Log.i("ExceptionError", "We are still here 7/10");
-            String line;
-            StringBuffer response = new StringBuffer();
-            while((line = rd.readLine()) != null) {
-                response.append(line);
-                response.append('\r');
-            }
-            Log.i("ExceptionError", "We are still here 8/10");
-            rd.close();
-            Log.i("ExceptionError", "We are still here 9/10");
-
-            // fetch responseCode
-            responseCode = conn.getResponseCode();
-            Log.i("ResponseFromServer", "code: " + responseCode);
-            Log.i("ResponseFromServer", "response: " + response);
-
-            Log.i("ExceptionError", "We are still here 10/10");
-            return response.toString();
-        }
-
-        catch (IOException e) {
-            Log.i("ExceptionError", "Exception appeared");
-            e.printStackTrace();
-        } finally {
-
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
-        return null;
-    }
-
     public class ExecuteNetworkOperation extends AsyncTask<Void, Void, String> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
             if (!isOnline()){
-                Toast.makeText(MainActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();;
+                Toast.makeText(MainActivity.this, R.string.no_internet_connection, Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -281,9 +169,10 @@ public class MainActivity extends AppCompatActivity {
             if (result != null) {
                 Toast.makeText(MainActivity.this, R.string.downloading_success, Toast.LENGTH_SHORT).show();
                 try {
-                    JSONObject responseJson = new JSONObject(result.toString());
+                    JSONObject responseJson = new JSONObject(result);
                     JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("times");
                     arrayOfDepartures = getDeparturesFromJson(responseArray);
+
                     final TextView bollard = (TextView) findViewById(R.id.bollard);
                     bollard.setText("Przystanek: ");
                     final TextView bollardName = (TextView) findViewById(R.id.bollard_name);
@@ -302,5 +191,94 @@ public class MainActivity extends AppCompatActivity {
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
         return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
+
+    public String sendToServer() throws IOException {
+        String timeStamp = getTimeStamp();
+        HttpURLConnection conn = null;
+        Integer responseCode;
+        String urlParameters = "method=" + URLEncoder.encode("getTimes","UTF-8") + "&p0=" + URLEncoder.encode("{\"symbol\":\"WICH02\"}", "UTF-8");
+
+        Log.i("URLEncoder", "URLEncoder: " + URLEncoder.encode("{\"symbol\":\"WICH02\"}", "UTF-8"));
+        try {
+            // create HttpURLConnection
+            URL url = new URL(TEST_URL + timeStamp);
+            conn = (HttpURLConnection) url.openConnection();
+
+            // make POST request to the given URL
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Length", "" +
+                    Integer.toString(urlParameters.getBytes().length));
+            conn.setRequestProperty("Cookie", "JSESSIONID=+FWYRC2+Tz9JLGAjqfxDjPnt.undefined; JSESSIONID=7093FDAEF67212D456793FCC8BD723FF.app1; __utmt=1; __utma=200167215.1491166330.1448740346.1448740346.1448740346.1; __utmb=200167215.1.10.1448740346; __utmc=200167215; __utmz=200167215.1448740346.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); cb-enabled=enabled");
+            conn.setRequestProperty("Origin", "https://www.peka.poznan.pl");
+            conn.setRequestProperty("Accept-Encoding", "gzip, deflate");
+            conn.setRequestProperty("Accept-Language", "en-GB,en;q=0.8,en-US;q=0.6,pl;q=0.4");
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.73 Safari/537.36");
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            conn.setRequestProperty("Accept", "text/javascript, text/html, application/xml, text/xml, */*");
+            conn.setRequestProperty("X-Prototype-Version", "1.7");
+            conn.setRequestProperty("X-Requested-With", "XMLHttpRequest");
+            conn.setRequestProperty("Connection", "keep-alive");
+            conn.setRequestProperty("Referer", "https://www.peka.poznan.pl/vm/");
+
+            conn.setDoOutput(true);
+            conn.setDoInput(true);
+
+            //Send request
+            DataOutputStream wr = new DataOutputStream (
+                    conn.getOutputStream ());
+            wr.writeBytes(urlParameters);
+            wr.flush();
+            wr.close();
+
+            InputStream is = new BufferedInputStream(conn.getInputStream());
+
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            String line;
+            StringBuffer response = new StringBuffer();
+            while((line = rd.readLine()) != null) {
+                response.append(line);
+                response.append('\r');
+            }
+            rd.close();
+
+            // fetch responseCode
+            responseCode = conn.getResponseCode();
+            Log.i("ResponseFromServer", "code: " + responseCode);
+            Log.i("ResponseFromServer", "response: " + response);
+
+            return response.toString();
+        }
+
+        catch (IOException e) {
+            Log.i("ExceptionError", "Exception appeared");
+            e.printStackTrace();
+        } finally {
+
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+        return null;
+    }
+
+    private ArrayList<Departure> getDeparturesFromJson(JSONArray jArray) throws JSONException {
+        ArrayList<Departure> departureList = new ArrayList<>();
+        departureList.clear();
+
+        for (int i = 0; i < jArray.length(); i++) {
+            JSONObject jsonData = jArray.getJSONObject(i);
+            Departure departure = getDepartures(jsonData);
+            departureList.add(departure);
+        }
+        return departureList;
+    }
+
+    private Departure getDepartures(JSONObject jObject) {
+        return new Departure(jObject.optBoolean("realTime"),
+                jObject.optString("line"),
+                jObject.optInt("minutes"),
+                jObject.optString("departure"),
+                jObject.optBoolean("onStopPoint"));
     }
 }
