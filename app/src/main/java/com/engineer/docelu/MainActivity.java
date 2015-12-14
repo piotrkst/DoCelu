@@ -50,6 +50,9 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        final TextView bollard = (TextView) findViewById(R.id.bollard);
+        final TextView bollardName = (TextView) findViewById(R.id.bollard_name);
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setColorFilter(Color.parseColor("#ffffff"));
         fab.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#177F42")));
@@ -172,11 +175,6 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject responseJson = new JSONObject(result);
                     JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("times");
                     arrayOfDepartures = getDeparturesFromJson(responseArray);
-
-                    final TextView bollard = (TextView) findViewById(R.id.bollard);
-                    bollard.setText("Przystanek: ");
-                    final TextView bollardName = (TextView) findViewById(R.id.bollard_name);
-                    bollardName.setText(responseJson.getJSONObject("success").getJSONObject("bollard").getString("name"));
                     showSchedule();
 
                 } catch (JSONException e) {
@@ -192,6 +190,22 @@ public class MainActivity extends AppCompatActivity {
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
         return netInfo != null && netInfo.isConnectedOrConnecting();
     }
+//      TO DO
+//    curl "https://www.peka.poznan.pl/vm/method.vm?ts=1449522087323"
+//            -H "Cookie: JSESSIONID=SJj8n9FGP4Egc6RMXWTOmJgY.undefined"
+//            -H "Origin: https://www.peka.poznan.pl"
+//            -H "Accept-Encoding: gzip, deflate"
+//            -H "Accept-Language: en-GB,en;q=0.8,en-US;q=0.6,pl;q=0.4"
+//            -H "User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.23 Safari/537.36"
+//            -H "Content-type: application/x-www-form-urlencoded; charset=UTF-8"
+//            -H "Accept: text/javascript, text/html, application/xml, text/xml, */*"
+//            -H "X-Prototype-Version: 1.7"
+//            -H "X-Requested-With: XMLHttpRequest"
+//            -H "Connection: keep-alive"
+//            -H "Referer: https://www.peka.poznan.pl/vm/"
+//            --data "method=getStopPoints&p0="%"7B"%"22pattern"%"22"%"3A"%"22kupa"%"22"%"7D"
+//            --compressed
+//            --insecure
 
     public String sendToServer() throws IOException {
         String timeStamp = getTimeStamp();
