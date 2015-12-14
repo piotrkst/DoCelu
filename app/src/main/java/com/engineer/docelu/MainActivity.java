@@ -67,10 +67,22 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Snackbar.make(view, R.string.downloading_schedule, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                new ExecuteNetworkOperation("getBollardsByStopPoint", "{\"name\":\"" + bollardName.getText() + "\"}").execute();
-                //Log.i("test", "getBollardsByStopPoint, {\"name\":\"" + bollardName.getText() + "\"}");
+                new ExecuteNetworkOperation("getBollardsByStopPoint", "{\"name\":\"" + trimEnd(bollardName.getText().toString()) + "\"}").execute();
             }
         });
+    }
+
+    public String trimEnd( String myString ) {
+
+        for ( int i = myString.length() - 1; i >= 0; --i ) {
+            if ( myString.charAt(i) == ' ' ) {
+                continue;
+            } else {
+                myString = myString.substring( 0, ( i + 1 ) );
+                break;
+            }
+        }
+        return myString;
     }
 
     private AlertDialog DirectionDialog(){

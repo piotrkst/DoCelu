@@ -26,7 +26,8 @@
             android:layout_toRightOf="@id/bollard"
             android:id="@+id/bollard_name"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:inputType="textCapWords"/>
 
     </LinearLayout>
     <ListView
