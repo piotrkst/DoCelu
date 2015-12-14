@@ -1,6 +1,8 @@
 package com.engineer.docelu;
 
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -10,6 +12,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -19,6 +22,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static String TEST_URL = "https://www.peka.poznan.pl/vm/method.vm?ts=";
     private ArrayList<Departure> arrayOfDepartures = new ArrayList<>();
+    private ArrayList<String> arrayOfDirections = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         final TextView bollard = (TextView) findViewById(R.id.bollard);
-        final TextView bollardName = (TextView) findViewById(R.id.bollard_name);
+        final EditText bollardName = (EditText) findViewById(R.id.bollard_name);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setColorFilter(Color.parseColor("#ffffff"));
@@ -62,9 +68,24 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Snackbar.make(view, R.string.downloading_schedule, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                new ExecuteNetworkOperation().execute();
+                new ExecuteNetworkOperation("getBollardsByStopPoint", "{\"name\":\"" + bollardName.getText() + "\"}").execute();
+                Log.i("test", "getBollardsByStopPoint, {\"name\":\"" + bollardName.getText() + "\"}");
             }
         });
+    }
+
+    private AlertDialog DirectionDialog(){
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle("Ustal kierunek podróży:");
+        final ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, R.layout.direction_row, R.id.element, arrayOfDirections);
+        dialog.setAdapter(adapter, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int item) {
+                        Log.i("TEST DIALOGU", "UZYTO: " + arrayOfDirections.get(item));
+                        dialog.dismiss();
+                    }
+                });
+        return dialog.create();
     }
 
     @Override
@@ -146,6 +167,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public class ExecuteNetworkOperation extends AsyncTask<Void, Void, String> {
+
+        public String method, p0;
+
+        public ExecuteNetworkOperation(String var, String var2) {
+            super();
+            method = var;
+            p0 = var2;
+        }
+
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -157,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(Void... params) {
             try {
-                return sendToServer();
+                return sendToServer(method, p0);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -171,15 +201,28 @@ public class MainActivity extends AppCompatActivity {
             super.onPostExecute(result);
             if (result != null) {
                 Toast.makeText(MainActivity.this, R.string.downloading_success, Toast.LENGTH_SHORT).show();
+//                try {
+//                    JSONObject responseJson = new JSONObject(result);
+//                    JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("times");
+//                    arrayOfDepartures = getDeparturesFromJson(responseArray);
+//                    showSchedule();
+//
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+
                 try {
                     JSONObject responseJson = new JSONObject(result);
-                    JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("times");
-                    arrayOfDepartures = getDeparturesFromJson(responseArray);
-                    showSchedule();
-
+                    JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("bollards");
+                    arrayOfDirections = getDirectionFromJson(responseArray);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+
+                AlertDialog directionDialog = DirectionDialog();
+                directionDialog.show();
+                Log.i("TEST ARRAY", "array: " + arrayOfDirections);
+                Log.i("TEST ARRAY", "array first object: " + arrayOfDirections.get(0));
             }
         }
     }
@@ -207,11 +250,13 @@ public class MainActivity extends AppCompatActivity {
 //            --compressed
 //            --insecure
 
-    public String sendToServer() throws IOException {
+    public String sendToServer(String var1, String var2) throws IOException {
+        final String method = var1;
+        final String p0 = var2;
         String timeStamp = getTimeStamp();
         HttpURLConnection conn = null;
         Integer responseCode;
-        String urlParameters = "method=" + URLEncoder.encode("getTimes","UTF-8") + "&p0=" + URLEncoder.encode("{\"symbol\":\"WICH02\"}", "UTF-8");
+        String urlParameters = "method=" + URLEncoder.encode(method,"UTF-8") + "&p0=" + URLEncoder.encode(p0, "UTF-8");
 
         Log.i("URLEncoder", "URLEncoder: " + URLEncoder.encode("{\"symbol\":\"WICH02\"}", "UTF-8"));
         try {
@@ -293,5 +338,31 @@ public class MainActivity extends AppCompatActivity {
                 jObject.optInt("minutes"),
                 jObject.optString("departure"),
                 jObject.optBoolean("onStopPoint"));
+    }
+
+    private ArrayList<String> getDirectionFromJson(JSONArray jArray) throws JSONException {
+        ArrayList<Direction> directionList = new ArrayList<>();
+        ArrayList<String> directionStringArray = new ArrayList<>();
+        ArrayList<String> directionsArray = new ArrayList<>();
+        directionList.clear();
+
+        for (int i = 0; i < jArray.length(); i++) {
+            JSONArray cutJson = jArray.getJSONObject(i).getJSONArray("directions");
+            for (int j = 0; j < cutJson.length(); j++) {
+                JSONObject jsonData = cutJson.getJSONObject(j);
+                Direction direction = getDirection(jsonData);
+                directionStringArray.add(direction.getLineName() + " -> " + direction.getDirection());
+            }
+            directionsArray.add(directionStringArray.toString());
+            directionStringArray.clear();
+        }
+
+        return directionsArray;
+    }
+
+    private Direction getDirection(JSONObject jObject) {
+        return new Direction(jObject.optString("returnVariant"),
+                jObject.optString("direction"),
+                jObject.optString("lineName"));
     }
 }
