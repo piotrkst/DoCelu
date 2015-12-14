@@ -1,6 +1,5 @@
 package com.engineer.docelu;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -23,7 +22,6 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     public static String TEST_URL = "https://www.peka.poznan.pl/vm/method.vm?ts=";
     private ArrayList<Departure> arrayOfDepartures = new ArrayList<>();
     private ArrayList<String> arrayOfDirections = new ArrayList<>();
-    private ArrayList<DirectionGroup> arrayofReadyDirections = new ArrayList<>();
+    private ArrayList<DirectionGroup> arrayOfReadyDirections = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
                 Snackbar.make(view, R.string.downloading_schedule, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
                 new ExecuteNetworkOperation("getBollardsByStopPoint", "{\"name\":\"" + bollardName.getText() + "\"}").execute();
-                Log.i("test", "getBollardsByStopPoint, {\"name\":\"" + bollardName.getText() + "\"}");
+                //Log.i("test", "getBollardsByStopPoint, {\"name\":\"" + bollardName.getText() + "\"}");
             }
         });
     }
@@ -82,8 +80,11 @@ public class MainActivity extends AppCompatActivity {
         dialog.setAdapter(adapter, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int item) {
-                Log.i("TEST DIALOGU", "UZYTO: " + arrayOfDirections.get(item));
+                Log.i("TEST DIALOGU", "UZYTO: " + arrayOfReadyDirections.get(item).getSymbol());
+                new ExecuteNetworkOperation("getTimes", "{\"symbol\":\"" + arrayOfReadyDirections.get(item).getSymbol() + "\"}").execute();
                 dialog.dismiss();
+                arrayOfReadyDirections.clear();
+                arrayOfDirections.clear();
             }
         });
         return dialog.create();
@@ -201,29 +202,36 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
             if (result != null) {
-                Toast.makeText(MainActivity.this, R.string.downloading_success, Toast.LENGTH_SHORT).show();
-//                try {
-//                    JSONObject responseJson = new JSONObject(result);
-//                    JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("times");
-//                    arrayOfDepartures = getDeparturesFromJson(responseArray);
-//                    showSchedule();
-//
-//                } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
-
+                if (method == "getTimes") {
+                    //Toast.makeText(MainActivity.this, R.string.downloading_success, Toast.LENGTH_SHORT).show();
                 try {
                     JSONObject responseJson = new JSONObject(result);
-                    JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("bollards");
-                    arrayOfDirections = getDirectionFromJson(responseArray);
+                    JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("times");
+                    arrayOfDepartures = getDeparturesFromJson(responseArray);
+                    showSchedule();
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-
-                AlertDialog directionDialog = DirectionDialog();
-                directionDialog.show();
-                Log.i("TEST ARRAY", "array: " + arrayOfDirections);
-                Log.i("TEST ARRAY", "array first object: " + arrayOfDirections.get(0));
+                }
+                if (method == "getBollardsByStopPoint") {
+                    try {
+                        JSONObject responseJson = new JSONObject(result);
+                        JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("bollards");
+                        arrayOfDirections = getDirectionFromJson(responseArray);
+                        if (!arrayOfDirections.isEmpty()) {
+                            AlertDialog directionDialog = DirectionDialog();
+                            directionDialog.show();
+                        } else {
+                            Toast.makeText(MainActivity.this, "Nie znaleziono przystanku", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(MainActivity.this, "Nie znaleziono przystanku", Toast.LENGTH_SHORT).show();
+                    }
+                    Log.i("TEST ARRAY", "array: " + arrayOfDirections);
+//                Log.i("TEST ARRAY", "array first object: " + arrayOfDirections.get(0));
+                }
             }
         }
     }
@@ -356,7 +364,7 @@ public class MainActivity extends AppCompatActivity {
             }
             directionsArray.add(directionStringArray.toString());
             DirectionGroup directionGroup = new DirectionGroup(directionStringArray.toString(), jArray.getJSONObject(i).getJSONObject("bollard").getString("symbol"));
-            arrayofReadyDirections.add(directionGroup);
+            arrayOfReadyDirections.add(directionGroup);
             directionStringArray.clear();
         }
         return directionsArray;
