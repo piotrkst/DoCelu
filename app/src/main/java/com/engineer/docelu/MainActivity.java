@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     public static String TEST_URL = "https://www.peka.poznan.pl/vm/method.vm?ts=";
     private ArrayList<Departure> arrayOfDepartures = new ArrayList<>();
     private ArrayList<String> arrayOfDirections = new ArrayList<>();
+    private ArrayList<DirectionGroup> arrayofReadyDirections = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,12 +80,12 @@ public class MainActivity extends AppCompatActivity {
         dialog.setTitle("Ustal kierunek podróży:");
         final ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, R.layout.direction_row, R.id.element, arrayOfDirections);
         dialog.setAdapter(adapter, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int item) {
-                        Log.i("TEST DIALOGU", "UZYTO: " + arrayOfDirections.get(item));
-                        dialog.dismiss();
-                    }
-                });
+            @Override
+            public void onClick(DialogInterface dialog, int item) {
+                Log.i("TEST DIALOGU", "UZYTO: " + arrayOfDirections.get(item));
+                dialog.dismiss();
+            }
+        });
         return dialog.create();
     }
 
@@ -354,9 +355,10 @@ public class MainActivity extends AppCompatActivity {
                 directionStringArray.add(direction.getLineName() + " -> " + direction.getDirection());
             }
             directionsArray.add(directionStringArray.toString());
+            DirectionGroup directionGroup = new DirectionGroup(directionStringArray.toString(), jArray.getJSONObject(i).getJSONObject("bollard").getString("symbol"));
+            arrayofReadyDirections.add(directionGroup);
             directionStringArray.clear();
         }
-
         return directionsArray;
     }
 
