@@ -24,6 +24,9 @@
         <activity android:name=".SettingsActivity">
 
         </activity>
+
+        <activity android:name=".ScheduleActivity">
+        </activity>
     </application>
 
 </manifest>

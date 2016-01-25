@@ -3,12 +3,15 @@ package com.engineer.docelu;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
@@ -40,13 +43,22 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
     public static String TEST_URL = "https://www.peka.poznan.pl/vm/method.vm?ts=";
+    public String inputBollardName;
+    private ArrayList<String> arrayOfInputs = new ArrayList<>(5);
     private ArrayList<Departure> arrayOfDepartures = new ArrayList<>();
     private ArrayList<String> arrayOfDirections = new ArrayList<>();
     private ArrayList<DirectionGroup> arrayOfReadyDirections = new ArrayList<>();
+    public EditText editText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,8 +67,12 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        final TextView bollard = (TextView) findViewById(R.id.bollard);
+        SharedPreferences prefs = this.getSharedPreferences("docelu",Context.MODE_PRIVATE);
+        Set<String> set = prefs.getStringSet("input", null);
+        if(set != null) { arrayOfInputs = new ArrayList<>(set); }
+
         final EditText bollardName = (EditText) findViewById(R.id.bollard_name);
+        editText = bollardName;
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setColorFilter(Color.parseColor("#ffffff"));
@@ -67,9 +83,67 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Snackbar.make(view, R.string.downloading_schedule, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                new ExecuteNetworkOperation("getBollardsByStopPoint", "{\"name\":\"" + trimEnd(bollardName.getText().toString()) + "\"}").execute();
+                inputBollardName = bollardName.getText().toString();
+                new ExecuteNetworkOperation("getBollardsByStopPoint", "{\"name\":\"" + trimEnd(inputBollardName) + "\"}").execute();
             }
         });
+
+        InputAdapter adapter = new InputAdapter(MainActivity.this, arrayOfInputs);
+        ListView departuresView = (ListView) findViewById(R.id.inputs);
+        departuresView.setDividerHeight(0);
+        departuresView.setAdapter(adapter);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        SharedPreferences prefs = this.getSharedPreferences("docelu", this.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        Set<String> set = new HashSet<>();
+        set.addAll(arrayOfInputs);
+        editor.putStringSet("input", set);
+        editor.commit();
+    }
+
+    public class InputAdapter extends ArrayAdapter<String> {
+
+        public InputAdapter(Context context, ArrayList<String> items) {
+            super(context, 0, items);
+        }
+
+        public View getView(int position, View convertView, ViewGroup parent) {
+            final String string = getItem(position);
+
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.input_hint_listview, parent, false);
+            }
+
+            final TextView input = (TextView) convertView.findViewById(R.id.input);
+
+            input.setText(string);
+
+            input.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    editText.setText(string);
+                }
+            });
+
+            return convertView;
+        }
+
+        public String getItem(int position) {
+            return arrayOfInputs.get(position);
+        }
+
+        public final int getCount() {
+            return arrayOfInputs.size();
+        }
+
+        public final long getItemId(int position) {
+            return position;
+        }
     }
 
     public String trimEnd( String myString ) {
@@ -133,51 +207,26 @@ public class MainActivity extends AppCompatActivity {
         return ts;
     }
 
-    private void showSchedule(){
-        ScheduleAdapter adapter = new ScheduleAdapter(MainActivity.this, arrayOfDepartures);
-        ListView departuresView = (ListView) findViewById(R.id.schedule);
-        departuresView.setAdapter(adapter);
+    private void saveInput(String input){
+        if(input != null){
+            if(!arrayOfInputs.contains(input)){
+                if(arrayOfInputs.size() == 5){
+                    arrayOfInputs.set(4, arrayOfInputs.get(3));
+                    arrayOfInputs.set(3, arrayOfInputs.get(2));
+                    arrayOfInputs.set(2, arrayOfInputs.get(1));
+                    arrayOfInputs.set(1, arrayOfInputs.get(0));
+                    arrayOfInputs.set(0, input);
+                } else {
+                    arrayOfInputs.add(input);
+                }
+            }
+        }
+        Log.i("test input", "test input: " + arrayOfInputs);
     }
-
-    public class ScheduleAdapter extends ArrayAdapter<Departure> {
-
-        public ScheduleAdapter(Context context, ArrayList<Departure> items) {
-            super(context, 0, items);
-        }
-
-        public View getView(int position, View convertView, ViewGroup parent) {
-            final Departure departure = getItem(position);
-
-            if (convertView == null) {
-                convertView = LayoutInflater.from(getContext()).inflate(R.layout.content_main_listview, parent, false);
-            }
-
-            final TextView lineMenu = (TextView) convertView.findViewById(R.id.line_menu);
-            final TextView line = (TextView) convertView.findViewById(R.id.line);
-            final TextView minutesMenu = (TextView) convertView.findViewById(R.id.minutes_menu);
-            final TextView minutes = (TextView) convertView.findViewById(R.id.minutes);
-
-            line.setText(departure.getLine()+"");
-            if (departure.getRealTime()){
-                minutes.setTextColor(ColorStateList.valueOf(Color.parseColor("#177F42")));
-                minutes.setText(departure.getMinutes()+"");
-            } else {
-                minutes.setText(departure.getDeparture().substring(11, 16)+"");
-            }
-            return convertView;
-        }
-
-        public Departure getItem(int position) {
-            return arrayOfDepartures.get(position);
-        }
-
-        public final int getCount() {
-            return arrayOfDepartures.size();
-        }
-
-        public final long getItemId(int position) {
-            return position;
-        }
+    private void showSchedule(){
+        Intent i = new Intent(this, ScheduleActivity.class);
+        i.putExtra("departureArray", arrayOfDepartures);
+        startActivity(i);
     }
 
     public class ExecuteNetworkOperation extends AsyncTask<Void, Void, String> {
@@ -232,6 +281,7 @@ public class MainActivity extends AppCompatActivity {
                         JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("bollards");
                         arrayOfDirections = getDirectionFromJson(responseArray);
                         if (!arrayOfDirections.isEmpty()) {
+                            saveInput(inputBollardName);
                             AlertDialog directionDialog = DirectionDialog();
                             directionDialog.show();
                         } else {

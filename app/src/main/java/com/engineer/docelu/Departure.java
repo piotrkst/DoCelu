@@ -1,6 +1,8 @@
 package com.engineer.docelu;
 
-public class Departure {
+import java.io.Serializable;
+
+public class Departure implements Serializable {
     private Boolean realTime;
     private String line;
     private Integer minutes;
