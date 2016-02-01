@@ -3,10 +3,17 @@
     <string name="app_name">DoCelu</string>
     <string name="author">Piotr Kostecki</string>
 
+    <!-- Clue -->
+    <string name="peka_url">https://www.peka.poznan.pl/vm/method.vm?ts=</string>
+
     <!-- Popups, notifications, logs, toasts etc. -->
+    <string name="stop_point_not_found">Nie znaleziono przystanku</string>
+    <string name="set_direction">Ustal kierunek podróży</string>
     <string name="no_internet_connection">Brak połączenia z internetem!</string>
     <string name="downloading_schedule">Pobieranie danych...</string>
     <string name="downloading_success">Pobieranie zakończony powodzeniem!</string>
+    <string name="last_search">Ostatnio wyszukiwane</string>
+    <string name="search_hint">Czy masz na myśli...?</string>
 
     <!-- Layouts -->
     <string name="action_settings">O aplikacji</string>
@@ -16,6 +23,9 @@
     <string name="last_inputs_label">Ostatnio wyszukiwane</string>
     <string name="hint">Wprowadz przystanek</string>
 
-    <!-- Other -->
-    <string name="departure_array">departureArray</string>
+    <!-- Extras -->
+    <string name="extras_do_celu">docelu</string>
+    <string name="extras_departure_array">departureArray</string>
+    <string name="extras_bollard">bollard</string>
+    <string name="extras_input">input</string>
 </resources>

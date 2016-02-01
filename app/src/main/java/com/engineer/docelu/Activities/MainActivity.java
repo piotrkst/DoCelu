@@ -54,7 +54,7 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static String TEST_URL = "https://www.peka.poznan.pl/vm/method.vm?ts=";
+    public String PEKA_URL;
     public String inputBollardName;
     private ArrayList<StopPoint> arrayOfStopPoints = new ArrayList<>();
     private ArrayList<String> arrayOfInputs = new ArrayList<>(5);
@@ -73,6 +73,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        PEKA_URL = getString(R.string.peka_url);
 
         final EditText bollardName = (EditText) findViewById(R.id.bollard_name);
         final Button eraseText = (Button) findViewById(R.id.erase_text);
@@ -100,11 +102,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 if (bollardName.getText().length() <= 2) {
-                    lastInputs.setText("Ostatnio wyszukiwane");
+                    lastInputs.setText(getString(R.string.last_search));
                     setAdapter(1);
                 }
                 if (bollardName.getText().length() > 2) {
-                    lastInputs.setText("Czy masz na myśli...?");
+                    lastInputs.setText(getString(R.string.search_hint));
                     new ExecuteNetworkOperation("getStopPoints", "{\"pattern\":\"" + bollardName.getText() + "\"}").execute();
                 }
             }
@@ -137,20 +139,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
 
-        SharedPreferences prefs = this.getSharedPreferences("docelu", this.MODE_PRIVATE);
+        SharedPreferences prefs = this.getSharedPreferences(getString(R.string.extras_do_celu), this.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
 
         Set<String> set = new HashSet<>();
         set.addAll(arrayOfInputs);
-        editor.putStringSet("input", set);
+        editor.putStringSet(getString(R.string.extras_input), set);
         editor.commit();
     }
 
     private void setInputs() {
-        SharedPreferences prefs = this.getSharedPreferences("docelu",Context.MODE_PRIVATE);
-        Set<String> set = prefs.getStringSet("input", null);
+        SharedPreferences prefs = this.getSharedPreferences(getString(R.string.extras_do_celu),Context.MODE_PRIVATE);
+        Set<String> set = prefs.getStringSet(getString(R.string.extras_input), null);
         if(set != null) { arrayOfInputs = new ArrayList<>(set); }
     }
+
     private void setAdapter(Integer flag) {
         if (flag == 0) {
             //initialize
@@ -200,18 +203,6 @@ public class MainActivity extends AppCompatActivity {
 
             return convertView;
         }
-
-        public String getItem(int position) {
-            return arrayOfReadyInputs.get(position);
-        }
-
-        public final int getCount() {
-            return arrayOfReadyInputs.size();
-        }
-
-        public final long getItemId(int position) {
-            return position;
-        }
     }
 
     public String trimEnd( String myString ) {
@@ -229,12 +220,12 @@ public class MainActivity extends AppCompatActivity {
 
     private AlertDialog DirectionDialog(){
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-        dialog.setTitle("Ustal kierunek podróży");
+        dialog.setTitle(getString(R.string.set_direction));
         final ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, R.layout.direction_row, R.id.element, arrayOfDirections);
         dialog.setAdapter(adapter, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int item) {
-                Log.i("TEST DIALOGU", "UZYTO: " + arrayOfReadyDirections.get(item).getSymbol());
+                Log.i("DIALOG TEST", "Dialog - Użyto tablicy: " + arrayOfReadyDirections.get(item).getSymbol());
                 new ExecuteNetworkOperation("getTimes", "{\"symbol\":\"" + arrayOfReadyDirections.get(item).getSymbol() + "\"}").execute();
                 dialog.dismiss();
                 arrayOfReadyDirections.clear();
@@ -291,8 +282,8 @@ public class MainActivity extends AppCompatActivity {
     }
     private void showSchedule(){
         Intent i = new Intent(this, ScheduleActivity.class);
-        i.putExtra("departureArray", arrayOfDepartures);
-        i.putExtra("bollard", inputBollardName);
+        i.putExtra(getString(R.string.extras_departure_array), arrayOfDepartures);
+        i.putExtra(getString(R.string.extras_bollard), inputBollardName);
         startActivity(i);
     }
 
@@ -366,13 +357,12 @@ public class MainActivity extends AppCompatActivity {
                             AlertDialog directionDialog = DirectionDialog();
                             directionDialog.show();
                         } else {
-                            Toast.makeText(MainActivity.this, "Nie znaleziono przystanku", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, getString(R.string.stop_point_not_found), Toast.LENGTH_SHORT).show();
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
-                        Toast.makeText(MainActivity.this, "Nie znaleziono przystanku", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, getString(R.string.stop_point_not_found), Toast.LENGTH_SHORT).show();
                     }
-                    Log.i("TEST ARRAY", "array: " + arrayOfDirections);
                 }
             }
         }
@@ -395,7 +385,7 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             // create HttpURLConnection
-            URL url = new URL(TEST_URL + timeStamp);
+            URL url = new URL(PEKA_URL + timeStamp);
             conn = (HttpURLConnection) url.openConnection();
 
             // make POST request to the given URL

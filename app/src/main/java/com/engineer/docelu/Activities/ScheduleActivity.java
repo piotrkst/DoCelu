@@ -20,15 +20,14 @@ import java.util.ArrayList;
 public class ScheduleActivity extends AppCompatActivity {
 
     private ArrayList<Departure> arrayOfDepartures = new ArrayList<>();
-    private String bollardName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_schedule);
         TextView bollard = (TextView) findViewById(R.id.bollard);
-        bollard.setText(bollardName = getIntent().getExtras().getString("bollard"));
-        arrayOfDepartures = (ArrayList<Departure>) getIntent().getSerializableExtra(getString(R.string.departure_array));
+        bollard.setText(getIntent().getExtras().getString(getString(R.string.extras_bollard)));
+        arrayOfDepartures = (ArrayList<Departure>) getIntent().getSerializableExtra(getString(R.string.extras_departure_array));
         ScheduleAdapter adapter = new ScheduleAdapter(ScheduleActivity.this, arrayOfDepartures);
         ListView departuresView = (ListView) findViewById(R.id.schedule);
         departuresView.setAdapter(adapter);
@@ -48,9 +47,7 @@ public class ScheduleActivity extends AppCompatActivity {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.content_main_listview, parent, false);
             }
 
-            final TextView lineMenu = (TextView) convertView.findViewById(R.id.line_menu);
             final TextView line = (TextView) convertView.findViewById(R.id.line);
-            final TextView minutesMenu = (TextView) convertView.findViewById(R.id.minutes_menu);
             final TextView minutes = (TextView) convertView.findViewById(R.id.minutes);
 
             line.setText(departure.getLine()+"");
