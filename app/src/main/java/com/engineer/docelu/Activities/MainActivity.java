@@ -17,11 +17,9 @@ import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -51,6 +49,8 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.engineer.docelu.Adapters.ListAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -158,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
         if (flag == 0) {
             //initialize
             arrayOfReadyInputs.addAll(arrayOfInputs);
-            adapter = new ListAdapter(MainActivity.this, arrayOfReadyInputs);
+            adapter = new ListAdapter(MainActivity.this, arrayOfReadyInputs, editText);
             departuresView.setDividerHeight(0);
             departuresView.setAdapter(adapter);
 
@@ -174,34 +174,6 @@ public class MainActivity extends AppCompatActivity {
             arrayOfReadyInputs.clear();
             arrayOfReadyInputs.addAll(arrayOfHintInputs);
             adapter.notifyDataSetChanged();
-        }
-    }
-
-    public class ListAdapter extends ArrayAdapter<String> {
-
-        public ListAdapter(Context context, ArrayList<String> items) {
-            super(context, 0, items);
-        }
-
-        public View getView(int position, View convertView, ViewGroup parent) {
-            final String string = getItem(position);
-
-            if (convertView == null) {
-                convertView = LayoutInflater.from(getContext()).inflate(R.layout.input_hint_listview, parent, false);
-            }
-
-            final TextView input = (TextView) convertView.findViewById(R.id.input);
-
-            input.setText(string);
-
-            input.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    editText.setText(string);
-                }
-            });
-
-            return convertView;
         }
     }
 
