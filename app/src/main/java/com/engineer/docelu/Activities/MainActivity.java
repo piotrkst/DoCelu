@@ -50,11 +50,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.engineer.docelu.Models.Constants.*;
+
 import com.engineer.docelu.Adapters.ListAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
-    public String PEKA_URL;
     public String inputBollardName;
     private ArrayList<StopPoint> arrayOfStopPoints = new ArrayList<>();
     private ArrayList<String> arrayOfInputs = new ArrayList<>(5);
@@ -73,8 +74,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        PEKA_URL = getString(R.string.peka_url);
 
         final EditText bollardName = (EditText) findViewById(R.id.bollard_name);
         final Button eraseText = (Button) findViewById(R.id.erase_text);
