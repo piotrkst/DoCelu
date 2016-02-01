@@ -1,7 +1,6 @@
-package com.engineer.docelu;
+package com.engineer.docelu.Activities;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -13,20 +12,23 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.engineer.docelu.Models.Departure;
+import com.engineer.docelu.R;
+
 import java.util.ArrayList;
 
-/**
- * Created by Kostek on 2016-01-25.
- */
 public class ScheduleActivity extends AppCompatActivity {
 
     private ArrayList<Departure> arrayOfDepartures = new ArrayList<>();
+    private String bollardName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_schedule);
-        arrayOfDepartures = (ArrayList<Departure>) getIntent().getSerializableExtra("departureArray");
+        TextView bollard = (TextView) findViewById(R.id.bollard);
+        bollard.setText(bollardName = getIntent().getExtras().getString("bollard"));
+        arrayOfDepartures = (ArrayList<Departure>) getIntent().getSerializableExtra(getString(R.string.departure_array));
         ScheduleAdapter adapter = new ScheduleAdapter(ScheduleActivity.this, arrayOfDepartures);
         ListView departuresView = (ListView) findViewById(R.id.schedule);
         departuresView.setAdapter(adapter);
@@ -53,7 +55,7 @@ public class ScheduleActivity extends AppCompatActivity {
 
             line.setText(departure.getLine()+"");
             if (departure.getRealTime()){
-                minutes.setTextColor(ColorStateList.valueOf(Color.parseColor("#177F42")));
+                minutes.setTextColor(ColorStateList.valueOf(Color.parseColor("#FF5722")));
                 minutes.setText(departure.getMinutes()+"");
             } else {
                 minutes.setText(departure.getDeparture().substring(11, 16)+"");

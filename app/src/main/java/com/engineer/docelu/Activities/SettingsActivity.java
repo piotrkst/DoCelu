@@ -1,7 +1,9 @@
-package com.engineer.docelu;
+package com.engineer.docelu.Activities;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+
+import com.engineer.docelu.R;
 
 public class SettingsActivity extends AppCompatActivity {
 

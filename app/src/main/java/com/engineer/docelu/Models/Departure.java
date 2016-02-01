@@ -1,4 +1,4 @@
-package com.engineer.docelu;
+package com.engineer.docelu.Models;
 
 import java.io.Serializable;
 

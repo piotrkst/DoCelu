@@ -1,22 +1,21 @@
-package com.engineer.docelu;
+package com.engineer.docelu.Activities;
 
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,10 +23,17 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.engineer.docelu.Models.Departure;
+import com.engineer.docelu.Models.Direction;
+import com.engineer.docelu.Models.DirectionGroup;
+import com.engineer.docelu.R;
+import com.engineer.docelu.Models.StopPoint;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,22 +49,23 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
     public static String TEST_URL = "https://www.peka.poznan.pl/vm/method.vm?ts=";
     public String inputBollardName;
+    private ArrayList<StopPoint> arrayOfStopPoints = new ArrayList<>();
     private ArrayList<String> arrayOfInputs = new ArrayList<>(5);
+    private ArrayList<String> arrayOfHintInputs = new ArrayList<>();
+    private ArrayList<String> arrayOfReadyInputs = new ArrayList<>();
     private ArrayList<Departure> arrayOfDepartures = new ArrayList<>();
     private ArrayList<String> arrayOfDirections = new ArrayList<>();
     private ArrayList<DirectionGroup> arrayOfReadyDirections = new ArrayList<>();
     public EditText editText;
+    public ListAdapter adapter;
+    ListView departuresView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,17 +74,52 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        SharedPreferences prefs = this.getSharedPreferences("docelu",Context.MODE_PRIVATE);
-        Set<String> set = prefs.getStringSet("input", null);
-        if(set != null) { arrayOfInputs = new ArrayList<>(set); }
-
         final EditText bollardName = (EditText) findViewById(R.id.bollard_name);
+        final Button eraseText = (Button) findViewById(R.id.erase_text);
+        final TextView lastInputs = (TextView) findViewById(R.id.lastInputs);
+
+        eraseText.setVisibility(View.INVISIBLE);
+
         editText = bollardName;
+
+        departuresView = (ListView) findViewById(R.id.inputs);
+
+        eraseText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                bollardName.setText("");
+            }
+        });
+
+        bollardName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if (bollardName.getText().length() <= 2) {
+                    lastInputs.setText("Ostatnio wyszukiwane");
+                    setAdapter(1);
+                }
+                if (bollardName.getText().length() > 2) {
+                    lastInputs.setText("Czy masz na myśli...?");
+                    new ExecuteNetworkOperation("getStopPoints", "{\"pattern\":\"" + bollardName.getText() + "\"}").execute();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (bollardName.getText().length() > 0) {
+                    eraseText.setVisibility(View.VISIBLE);
+                } else eraseText.setVisibility(View.INVISIBLE);
+            }
+        });
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setColorFilter(Color.parseColor("#ffffff"));
-        fab.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#177F42")));
-        fab.setRippleColor(Color.parseColor("#0C4021"));
+        fab.setRippleColor(Color.parseColor("#ffffff"));
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -87,16 +129,14 @@ public class MainActivity extends AppCompatActivity {
                 new ExecuteNetworkOperation("getBollardsByStopPoint", "{\"name\":\"" + trimEnd(inputBollardName) + "\"}").execute();
             }
         });
-
-        InputAdapter adapter = new InputAdapter(MainActivity.this, arrayOfInputs);
-        ListView departuresView = (ListView) findViewById(R.id.inputs);
-        departuresView.setDividerHeight(0);
-        departuresView.setAdapter(adapter);
+        setInputs();
+        setAdapter(0);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+
         SharedPreferences prefs = this.getSharedPreferences("docelu", this.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
 
@@ -106,9 +146,37 @@ public class MainActivity extends AppCompatActivity {
         editor.commit();
     }
 
-    public class InputAdapter extends ArrayAdapter<String> {
+    private void setInputs() {
+        SharedPreferences prefs = this.getSharedPreferences("docelu",Context.MODE_PRIVATE);
+        Set<String> set = prefs.getStringSet("input", null);
+        if(set != null) { arrayOfInputs = new ArrayList<>(set); }
+    }
+    private void setAdapter(Integer flag) {
+        if (flag == 0) {
+            //initialize
+            arrayOfReadyInputs.addAll(arrayOfInputs);
+            adapter = new ListAdapter(MainActivity.this, arrayOfReadyInputs);
+            departuresView.setDividerHeight(0);
+            departuresView.setAdapter(adapter);
 
-        public InputAdapter(Context context, ArrayList<String> items) {
+        }
+        if (flag == 1) {
+            //update arrayOfInputs
+            arrayOfReadyInputs.clear();
+            arrayOfReadyInputs.addAll(arrayOfInputs);
+            adapter.notifyDataSetChanged();
+        }
+        if (flag == 2) {
+            //update arrayOfHintInputs
+            arrayOfReadyInputs.clear();
+            arrayOfReadyInputs.addAll(arrayOfHintInputs);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    public class ListAdapter extends ArrayAdapter<String> {
+
+        public ListAdapter(Context context, ArrayList<String> items) {
             super(context, 0, items);
         }
 
@@ -134,11 +202,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public String getItem(int position) {
-            return arrayOfInputs.get(position);
+            return arrayOfReadyInputs.get(position);
         }
 
         public final int getCount() {
-            return arrayOfInputs.size();
+            return arrayOfReadyInputs.size();
         }
 
         public final long getItemId(int position) {
@@ -161,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
 
     private AlertDialog DirectionDialog(){
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-        dialog.setTitle("Ustal kierunek podróży:");
+        dialog.setTitle("Ustal kierunek podróży");
         final ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, R.layout.direction_row, R.id.element, arrayOfDirections);
         dialog.setAdapter(adapter, new DialogInterface.OnClickListener() {
             @Override
@@ -202,12 +270,11 @@ public class MainActivity extends AppCompatActivity {
 
     public String getTimeStamp(){
         Long tsLong = System.currentTimeMillis();
-        String ts = tsLong.toString();
-        Log.i("TS TEST", "TS: " + ts);
-        return ts;
+        return tsLong.toString();
     }
 
     private void saveInput(String input){
+        input = trimEnd(input);
         if(input != null){
             if(!arrayOfInputs.contains(input)){
                 if(arrayOfInputs.size() == 5){
@@ -221,11 +288,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
-        Log.i("test input", "test input: " + arrayOfInputs);
     }
     private void showSchedule(){
         Intent i = new Intent(this, ScheduleActivity.class);
         i.putExtra("departureArray", arrayOfDepartures);
+        i.putExtra("bollard", inputBollardName);
         startActivity(i);
     }
 
@@ -263,17 +330,31 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String result) {
             super.onPostExecute(result);
             if (result != null) {
-                if (method == "getTimes") {
-                    //Toast.makeText(MainActivity.this, R.string.downloading_success, Toast.LENGTH_SHORT).show();
-                try {
-                    JSONObject responseJson = new JSONObject(result);
-                    JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("times");
-                    arrayOfDepartures = getDeparturesFromJson(responseArray);
-                    showSchedule();
+                if (method == "getStopPoints"){
+                    try {
+                        JSONObject responseJson = new JSONObject(result);
+                        JSONArray responseArray = responseJson.getJSONArray("success");
+                        arrayOfStopPoints = getStopPointsFromJson(responseArray);
+                        arrayOfHintInputs.clear();
+                        for (int i = 0; i < arrayOfStopPoints.size(); i++) {
+                            arrayOfHintInputs.add(arrayOfStopPoints.get(i).getName());
+                        }
+                        setAdapter(2);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
 
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
+                if (method == "getTimes") {
+                    try {
+                        JSONObject responseJson = new JSONObject(result);
+                        JSONArray responseArray = responseJson.getJSONObject("success").getJSONArray("times");
+                        arrayOfDepartures = getDeparturesFromJson(responseArray);
+                        showSchedule();
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
                 if (method == "getBollardsByStopPoint") {
                     try {
@@ -292,7 +373,6 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, "Nie znaleziono przystanku", Toast.LENGTH_SHORT).show();
                     }
                     Log.i("TEST ARRAY", "array: " + arrayOfDirections);
-//                Log.i("TEST ARRAY", "array first object: " + arrayOfDirections.get(0));
                 }
             }
         }
@@ -304,22 +384,6 @@ public class MainActivity extends AppCompatActivity {
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
         return netInfo != null && netInfo.isConnectedOrConnecting();
     }
-//      TO DO
-//    curl "https://www.peka.poznan.pl/vm/method.vm?ts=1449522087323"
-//            -H "Cookie: JSESSIONID=SJj8n9FGP4Egc6RMXWTOmJgY.undefined"
-//            -H "Origin: https://www.peka.poznan.pl"
-//            -H "Accept-Encoding: gzip, deflate"
-//            -H "Accept-Language: en-GB,en;q=0.8,en-US;q=0.6,pl;q=0.4"
-//            -H "User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.23 Safari/537.36"
-//            -H "Content-type: application/x-www-form-urlencoded; charset=UTF-8"
-//            -H "Accept: text/javascript, text/html, application/xml, text/xml, */*"
-//            -H "X-Prototype-Version: 1.7"
-//            -H "X-Requested-With: XMLHttpRequest"
-//            -H "Connection: keep-alive"
-//            -H "Referer: https://www.peka.poznan.pl/vm/"
-//            --data "method=getStopPoints&p0="%"7B"%"22pattern"%"22"%"3A"%"22kupa"%"22"%"7D"
-//            --compressed
-//            --insecure
 
     public String sendToServer(String var1, String var2) throws IOException {
         final String method = var1;
@@ -329,7 +393,6 @@ public class MainActivity extends AppCompatActivity {
         Integer responseCode;
         String urlParameters = "method=" + URLEncoder.encode(method,"UTF-8") + "&p0=" + URLEncoder.encode(p0, "UTF-8");
 
-        Log.i("URLEncoder", "URLEncoder: " + URLEncoder.encode("{\"symbol\":\"WICH02\"}", "UTF-8"));
         try {
             // create HttpURLConnection
             URL url = new URL(TEST_URL + timeStamp);
@@ -389,6 +452,23 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return null;
+    }
+
+    private ArrayList<StopPoint> getStopPointsFromJson(JSONArray jArray) throws JSONException {
+        ArrayList<StopPoint> stopPointList = new ArrayList<>();
+        stopPointList.clear();
+
+        for (int i = 0; i < jArray.length(); i++) {
+            JSONObject jsonData = jArray.getJSONObject(i);
+            StopPoint stopPoint = getStopPoints(jsonData);
+            stopPointList.add(stopPoint);
+        }
+        return stopPointList;
+    }
+
+    private StopPoint getStopPoints(JSONObject jObject) {
+        return new StopPoint(jObject.optString("symbol"),
+                jObject.optString("name"));
     }
 
     private ArrayList<Departure> getDeparturesFromJson(JSONArray jArray) throws JSONException {

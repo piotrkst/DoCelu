@@ -1,4 +1,4 @@
-package com.engineer.docelu;
+package com.engineer.docelu.Models;
 
 public class DirectionGroup {
     private String directionGrouped;

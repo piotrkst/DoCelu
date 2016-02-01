@@ -1,7 +1,21 @@
 <resources>
+    <!-- Application Info -->
     <string name="app_name">DoCelu</string>
-    <string name="action_settings">Ustawienia</string>
+    <string name="author">Piotr Kostecki</string>
+
+    <!-- Popups, notifications, logs, toasts etc. -->
     <string name="no_internet_connection">Brak połączenia z internetem!</string>
     <string name="downloading_schedule">Pobieranie danych...</string>
     <string name="downloading_success">Pobieranie zakończony powodzeniem!</string>
+
+    <!-- Layouts -->
+    <string name="action_settings">O aplikacji</string>
+    <string name="author_label">Autor: </string>
+    <string name="note">Aplikacja powstała przy użyciu danych pochodzących z wirtualnego monitora PEKA.</string>
+    <string name="note_label">Notka: </string>
+    <string name="last_inputs_label">Ostatnio wyszukiwane</string>
+    <string name="hint">Wprowadz przystanek</string>
+
+    <!-- Other -->
+    <string name="departure_array">departureArray</string>
 </resources>
